@@ -1,0 +1,27 @@
+# --- Core Framework ---
+langchain
+langchain-core
+langchain-community
+
+# --- LLM API Integrations ---
+langchain-groq         # For Groq API (fast generation)
+langchain-google-genai # For Gemini API (smart routing)
+langchain-ollama       # For Ollama (local fallback)
+
+# --- Server ---
+fastapi                # The API framework
+uvicorn[standard]      # The server to run FastAPI
+
+# --- Vector Store & Embeddings ---
+chromadb-client        # Local vector database
+sentence-transformers  # For running embedding models (like BGE)
+
+# --- Data Loading ---
+pypdf                  # To load PDF documents
+
+# --- RAG Evaluation ---
+ragas                  # For Phase 6 evaluation
+
+# --- Utilities ---
+python-dotenv          # To load API keys from .env
+langchainhub           # To easily pull standard prompts
