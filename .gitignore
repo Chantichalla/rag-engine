@@ -1,15 +1,16 @@
 # Python
 __pycache__/
 *.py[cod]
-.venv/
+*.egg-info/
+
+# Virtual Environment (The new name!)
+myvenv/
+
+# Local Vector Database
+vectorstore/
+
+# Secret Files
 .env
-
-# Vectorstore
-/vectorstore/
-
-# Data
-/data/
-*.db
 
 # OS
 .DS_Store
