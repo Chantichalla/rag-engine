@@ -3,15 +3,22 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 
-from app.retrievers import load_retrieval_documents
+# It imports the retrievers and the *finished* router chain
+from app.retrievers import load_retrieval_components
 from app.router import router_chain
 
-retrievers = load_retrieval_documents()
+# --- 1. Load all our retriever tools ---
+print("Loading retrieval components...")
+retrievers = load_retrieval_components()
+print("All components loaded.")
 
+# --- 2. Define the Final RAG LLM & Prompt ---
+# This is the ONLY ChatGroq in this file
 final_llm = ChatGroq(
     model="llama-3.1-8b-instant",
     temperature=0
 )
+
 rag_prompt_template = """
 You are an expert Q&A assistant.
 Use the following context to answer the user's question.
@@ -22,24 +29,24 @@ CONTEXT:
 {context}
 
 QUESTION:
-{question}
+{query}
 
 ANSWER:
 """
 
 rag_prompt = PromptTemplate(
     template=rag_prompt_template,
-    input_variables=["context","question"]
+    input_variables=["context", "query"]
 )
 
-def decisiom_maker(input_dict):
-    # This takes output from router and brings the correct answer
+# --- 3. Build the Routing Logic ---
+def route_to_retriever(input_dict):
     tool_name = input_dict.get("routing_decision", {}).get("tool", "base")
     query = input_dict.get("query", "")
-
-    print(f"--- Routing to: {tool_name} ---") # For debugging
-
-    if tool_name == "hybrid":
+    
+    print(f"--- Routing to: {tool_name} ---")
+    
+    if tool_name == "hybrid" and retrievers["hybrid"]:
         return retrievers["hybrid"].invoke(query)
     elif tool_name == "hyde":
         return retrievers["hyde"].invoke(query)
@@ -47,29 +54,17 @@ def decisiom_maker(input_dict):
         return retrievers["rag_fusion"].invoke(query)
     else:
         return retrievers["base"].invoke(query)
-    
+
 # --- 4. Build the Full End-to-End Chain ---
-# Step 1: Create a "passthrough" for the query.
-# This chain will take a query (string) and output a dictionary:
-# {"query": "the user's query"}
-chain_with_query = RunnablePassthrough.assign(
+# This chain correctly pipes to the router_chain
+chain_with_routing_decision = RunnablePassthrough.assign(
+    routing_decision=router_chain,
     query=lambda x: x["query"]
 )
-# Step 2: Add the routing decision.
-# This chain will take the dict from Step 1 and add the router's choice:
-# {"query": "...", "routing_decision": {"tool": "hybrid"}}
-chain_with_routing_decision = chain_with_query | {
-    "routing_decision": (lambda x: router_chain.invoke({"query": x["query"]})),
-    "query": (lambda x: x["query"])
-}
 
-# Step 3: Run the chosen retriever.
-# This chain will take the dict from Step 2, run our custom `route_to_retriever`
-# function, and format the output.
+context_retrieval_chain = RunnableLambda(route_to_retriever) | (lambda docs: "\n---\n".join([d.page_content for d in docs]))
 
 final_rag_chain = chain_with_routing_decision | {
-    "context": (lambda x: decisiom_maker(x)) | (lambda docs: "\n---\n".join([d.page_content for d in docs])),
-    "query": (lambda x:x["query"])
-    }| rag_prompt | final_llm | StrOutputParser()
-
-# `full_rag_chain` is the single, runnable object our API will call.
+    "context": context_retrieval_chain,
+    "query": (lambda x: x["query"])
+} | rag_prompt | final_llm | StrOutputParser()

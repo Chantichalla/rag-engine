@@ -1,18 +1,17 @@
 from langchain_core.prompts import PromptTemplate
-from langchain_core.runnables import RunnableBranch, RunnablePassthrough
 from langchain_groq import ChatGroq
-from langchain_core.output_parsers import JsonOutputParser
+from langchain_core.output_parsers.json import JsonOutputParser
 
-# lets create a router llm
-
+# --- 1. Define the Router LLM ---
+# This is where the ChatGroq model is defined.
+# It will load the GROQ_API_KEY from your .env file.
 router_llm = ChatGroq(
     model="llama-3.1-8b-instant",
     temperature=0,
-    format="json"
+    model_kwargs={"response_format": {"type": "json_object"}}
 )
 
-
-# This prompt is the "brain." We describe our tools and ask the LLM to choose one.
+# --- 2. Define the Router Prompt ---
 router_prompt_template = """
 You are an expert at routing a user's question to the best retrieval tool.
 Based on the query, choose ONE tool that is best suited to answer it.
@@ -43,15 +42,13 @@ Here are the available tools:
 
 **Instructions:**
 Return a JSON object with a *single* key "tool" and the value being the *exact name* of the tool you chose.
-Example: {"tool": "hybrid"}
+Example: {{"tool": "hybrid"}}
 """
 
 router_prompt = PromptTemplate(
     template=router_prompt_template,
-    input_variables=["query"]
+    input_variables=[ "query"]# This only has one variable
 )
 
-# Now lets create the chain
-
+# --- 3. Define the Router Chain ---
 router_chain = router_prompt | router_llm | JsonOutputParser()
-

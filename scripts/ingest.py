@@ -2,11 +2,13 @@ import os
 from dotenv import load_dotenv
 
 from langchain_community.document_loaders import PyPDFLoader, DirectoryLoader
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_core.stores import InMemoryStore
-# THIS IS THE CORRECT PATH FOR THIS VERSION:
+#from langchain_core.stores import EncoderBackedStore
+from langchain_classic.storage import InMemoryStore
+#from langchain_classic.storage import LocalFileStore
+#import pickle
 from langchain_classic.retrievers.parent_document_retriever import ParentDocumentRetriever
 
 #-- Load --
@@ -66,7 +68,10 @@ def main():
         docstore=store,
     )
 
+    print("Adding documents to vector store and in-memory docstore...")
+    # This will populate Chroma (on disk) and the store (in memory)
     retriever.add_documents(documents)
+    
     print("-----------------------------------------")
     print("✅ Ingestion complete!")
     print(f"Vector store created at: {DB_path}")
