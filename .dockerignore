@@ -9,8 +9,6 @@ __pycache__/
 *.py[cod]
 
 
-vectorstore/
-docstore/
 
 
 .env
