@@ -9,9 +9,10 @@ from langchain_classic.storage import EncoderBackedStore
 from langchain_classic.storage import LocalFileStore
 import pickle
 import json
+import hashlib
 from langchain_classic.storage import InMemoryStore
-#from langchain_classic.storage import LocalFileStore
-#import pickle
+
+from langchain_community.retrievers import BM25Retriever
 from langchain_classic.retrievers.parent_document_retriever import ParentDocumentRetriever
 
 #-- Load --
@@ -20,6 +21,7 @@ load_dotenv()
 data_path = 'data/'
 DB_path = "vectorstore/"
 EMBED_MODEL_NAME = "BAAI/bge-m3" 
+BM25_PATH = "bm25_retriever.pkl"
 doc_store_path = 'docstore/'
 
 def main():
@@ -36,6 +38,12 @@ def main():
     if not documents:
         print("No documents found. Please add a PDF (like the RAG wiki page) to the 'data/' folder.")
         return
+    print("Building BM25 Index..")
+    bm25_retriever = BM25Retriever.from_documents(documents)
+    with open (BM25_PATH,"wb") as f:
+        pickle.dump(bm25_retriever, f)
+        print(f"BM25 index saved to {BM25_PATH}")
+
     print(f"loaded {len(documents)} documents")
     model_kwargs = {'device': 'cuda'}
     encode_kwargs = {'normalize_embeddings': True} 
@@ -53,16 +61,19 @@ def main():
 
     child_splitter = RecursiveCharacterTextSplitter(chunk_size=400, chunk_overlap=40)
 
-    # 1. Create the "dumb" byte store that saves to disk
-    byte_store = LocalFileStore(root_path=doc_store_path)
     
-    # 2. Create the "smart" store that wraps it, using pickle to encode
+    byte_store = LocalFileStore(root_path=doc_store_path)
     store = EncoderBackedStore(
         store=byte_store,
-        key_encoder=lambda k: json.dumps(k),
-        value_serializer=lambda v: pickle.dumps(v),
-        value_deserializer=lambda b: pickle.loads(b),
-    )
+        key_encoder=lambda k: hashlib.sha256(
+            (
+                k.encode("utf-8") if isinstance(k, str)
+                else json.dumps(k, sort_keys=True, default=str).encode("utf-8")
+            )
+        ).hexdigest(),
+    value_serializer=lambda v: pickle.dumps(v),
+    value_deserializer=lambda b: pickle.loads(b),
+)
     vectorstore = Chroma(
         collection_name="full-documents",
         embedding_function=embeddings,
@@ -86,11 +97,11 @@ def main():
     
     print(f"Adding {total_docs} documents in batches of {batch_size}...")
     
+    # ingestion loop
     for i in range(0, total_docs, batch_size):
-        batch_docs = documents[i : i + batch_size]
-        print(f"--- Processing batch {i//batch_size + 1} / {total_docs//batch_size + 1} ---")
+        batch_docs = documents[i: i + batch_size]
         retriever.add_documents(batch_docs)
-    
+
     
     print("-----------------------------------------")
     print(" Ingestion complete!")

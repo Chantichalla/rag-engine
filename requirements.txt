@@ -1,5 +1,5 @@
 # --- Core Framework ---
-langchain
+langchain==1.0.5
 langchain-core
 langchain-community
 langchain_classic
@@ -22,8 +22,8 @@ uvicorn[standard]      # The server to run FastAPI
 # --- Vector Store & Embeddings ---
 langchain_chroma
 chromadb      # Local vector database
-sentence-transformers
 transformers==4.56.0
+sentence-transformers
 
 # --- Data Loading ---
 pypdf                  # To load PDF documents
@@ -34,3 +34,5 @@ ragas                  # For Phase 6 evaluation
 # --- Utilities ---
 python-dotenv          # To load API keys from .env
 langchainhub           # To easily pull standard prompts
+
+pytorch:2.4.0-cuda12.1-cudnn9-runtime

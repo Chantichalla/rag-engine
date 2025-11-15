@@ -6,6 +6,7 @@ from langchain_classic.storage import EncoderBackedStore
 from langchain_classic.storage import InMemoryStore
 import pickle
 import json
+import hashlib
 from langchain_classic.retrievers import ParentDocumentRetriever
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
@@ -32,6 +33,7 @@ load_dotenv()
 DB_PATH = "vectorstore/"
 DATA_PATH = "data/"
 EMBED_MODEL_NAME = "BAAI/bge-m3"
+BM25_PATH = "bm25_retriever.pkl"
 doc_store_path = 'docstore/'
 
 # --- 2. Function to Load Core Components (THE FIX) ---
@@ -59,7 +61,12 @@ def get_base_retriever():
     
     store = EncoderBackedStore(
         store=byte_store,
-        key_encoder=lambda k: json.dumps(k),
+        key_encoder=lambda k: hashlib.sha256(
+            (
+            k.encode("utf-8") if isinstance(k, str)
+            else json.dumps(k, sort_keys=True, default=str).encode("utf-8")
+            )
+        ).hexdigest(),
         value_serializer=lambda v: pickle.dumps(v),
         value_deserializer=lambda b: pickle.loads(b),
     )
@@ -83,21 +90,14 @@ def get_base_retriever():
 def get_hybrid_retriever(vectorstore): 
     print("Initializing hybrid retriever...")
     
-    print(f"Loading documents from {DATA_PATH} for BM25...")
-    loader = DirectoryLoader(
-        DATA_PATH,
-        glob="**/*.pdf",
-        loader_cls=PyPDFLoader,
-        show_progress=True
-    )
-    all_docs = loader.load()
+    print(f"Loading pre-built BM25 index from {BM25_PATH}...")
 
-    if not all_docs:
-        print("Warning: No documents found in /data. Skipping BM25.")
-        return None 
-
-    print(f"Initializing BM25Retriever with {len(all_docs)} documents...")
-    bm25_retriever = BM25Retriever.from_documents(all_docs)
+    try:
+        with open(BM25_PATH,"rb") as f:
+            bm25_retriever = pickle.load(f)
+    except FileNotFoundError:
+        print("Error: bm25_retriever.pkl not found. Please run scripts/ingest.py first.")
+        return None
     
     vector_retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
 
