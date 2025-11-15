@@ -3,17 +3,15 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 
-# It imports the retrievers and the *finished* router chain
 from app.retrievers import load_retrieval_components
 from app.router import router_chain
 
-# --- 1. Load all our retriever tools ---
+
 print("Loading retrieval components...")
 retrievers = load_retrieval_components()
 print("All components loaded.")
 
-# --- 2. Define the Final RAG LLM & Prompt ---
-# This is the ONLY ChatGroq in this file
+
 final_llm = ChatGroq(
     model="llama-3.1-8b-instant",
     temperature=0
@@ -39,7 +37,7 @@ rag_prompt = PromptTemplate(
     input_variables=["context", "query"]
 )
 
-# --- 3. Build the Routing Logic ---
+# ---Routing Logic---
 def route_to_retriever(input_dict):
     tool_name = input_dict.get("routing_decision", {}).get("tool", "base")
     query = input_dict.get("query", "")
@@ -55,8 +53,7 @@ def route_to_retriever(input_dict):
     else:
         return retrievers["base"].invoke(query)
 
-# --- 4. Build the Full End-to-End Chain ---
-# This chain correctly pipes to the router_chain
+
 chain_with_routing_decision = RunnablePassthrough.assign(
     routing_decision=router_chain,
     query=lambda x: x["query"]

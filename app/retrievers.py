@@ -1,22 +1,21 @@
 import os
 from dotenv import load_dotenv
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-#from langchain_classic.storage import LocalFileStore
+from langchain_classic.storage import LocalFileStore
+from langchain_classic.storage import EncoderBackedStore
 from langchain_classic.storage import InMemoryStore
-#import pickle
+import pickle
+import json
 from langchain_classic.retrievers import ParentDocumentRetriever
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
-# Advance imports
-#--hyDE imports
-# ... (all your existing imports) ...
+
 from langchain_classic.chains.hyde.base import HypotheticalDocumentEmbedder
 from langchain_classic.chains import LLMChain
 
 from langchain_groq import ChatGroq
 from langchain_core.prompts import PromptTemplate
- #-- RAG_Fusion imports
- # ... (all your existing imports) ...
+
 from langchain_classic.retrievers.multi_query import MultiQueryRetriever
 
 from langchain_classic.retrievers import (
@@ -33,6 +32,7 @@ load_dotenv()
 DB_PATH = "vectorstore/"
 DATA_PATH = "data/"
 EMBED_MODEL_NAME = "BAAI/bge-m3"
+doc_store_path = 'docstore/'
 
 # --- 2. Function to Load Core Components (THE FIX) ---
 def get_base_retriever():
@@ -51,19 +51,18 @@ def get_base_retriever():
         persist_directory=DB_PATH,
         embedding_function=embeddings
     )
+
     
-    # 2. Create a NEW, EMPTY docstore for our server
-    store = InMemoryStore()
+    # Load the persistent data from docstore
+    print(f"Loading documents from {doc_store_path} to populate docstore...")
+    byte_store = LocalFileStore(root_path=doc_store_path)
     
-    # 3. --- THIS IS THE FIX ---
-    #    Load the raw PDFs from /data (just like ingest.py)
-    print(f"Loading documents from {DATA_PATH} to populate docstore...")
-    loader = DirectoryLoader(
-        DATA_PATH, # <-- This was the bug, it's now fixed
-        glob="**/*.pdf",
-        loader_cls=PyPDFLoader,
+    store = EncoderBackedStore(
+        store=byte_store,
+        key_encoder=lambda k: json.dumps(k),
+        value_serializer=lambda v: pickle.dumps(v),
+        value_deserializer=lambda b: pickle.loads(b),
     )
-    docs = loader.load()
     
     parent_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=200)
     child_splitter = RecursiveCharacterTextSplitter(chunk_size=400, chunk_overlap=40)
@@ -75,19 +74,11 @@ def get_base_retriever():
         child_splitter=child_splitter,
         parent_splitter=parent_splitter
     )
-    
-    # 5. --- THIS IS THE FIX ---
-    #    Repopulate the in-memory docstore with the parent docs.
-    if docs:
-        print("Populating in-memory docstore...")
-        base_retriever.add_documents(docs, add_to_vectorstore=False) # Don't re-add to vector store
-    else:
-        print("Warning: No documents found in /data, docstore is empty.")
 
     print("Base retriever loaded.")
     return base_retriever, vectorstore
 
-# --- 3. Define Expert Retrievers ---
+# Defining Retrievers
 
 def get_hybrid_retriever(vectorstore): 
     print("Initializing hybrid retriever...")
@@ -178,7 +169,7 @@ def get_rag_fusion_retriever(vectorstore):
     print("---fusion retriever initialized---")
     return fusion_retriever
 
-# --- 4. Main Factory Function ---
+# Main function
 def load_retrieval_components():
     base_retriever, vectorstore = get_base_retriever()
 

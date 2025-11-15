@@ -2,6 +2,7 @@
 langchain
 langchain-core
 langchain-community
+langchain_classic
 langchain-text-splitters 
 
 
@@ -32,3 +33,4 @@ ragas                  # For Phase 6 evaluation
 # --- Utilities ---
 python-dotenv          # To load API keys from .env
 langchainhub           # To easily pull standard prompts
+pickle

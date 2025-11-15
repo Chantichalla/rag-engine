@@ -2,16 +2,13 @@ from langchain_core.prompts import PromptTemplate
 from langchain_groq import ChatGroq
 from langchain_core.output_parsers.json import JsonOutputParser
 
-# --- 1. Define the Router LLM ---
-# This is where the ChatGroq model is defined.
-# It will load the GROQ_API_KEY from your .env file.
+
 router_llm = ChatGroq(
     model="llama-3.1-8b-instant",
     temperature=0,
     model_kwargs={"response_format": {"type": "json_object"}}
 )
 
-# --- 2. Define the Router Prompt ---
 router_prompt_template = """
 You are an expert at routing a user's question to the best retrieval tool.
 Based on the query, choose ONE tool that is best suited to answer it.
@@ -19,24 +16,21 @@ Based on the query, choose ONE tool that is best suited to answer it.
 Here are the available tools:
 
 1.  **rag_fusion**: 
-    - Good for broad, vague, or exploratory questions.
-    - Use this when the user is asking a general question (e.g., "What about RAG?").
-    - This tool expands the query into multiple sub-queries.
+    - **USE THIS FOR:** Broad, vague, or exploratory questions.
+    - **KEYWORDS:** "what is", "how does", "explain", "overview", "compare"
+    - **EXAMPLE:** "What is RAG-Fusion?", "Compare RAG vs. Fine-tuning", "What are diffusion models?"
 
 2.  **hyde**:
-    - Good for ambiguous questions or when the query is short.
-    - Use this when the user's query lacks detail.
-    - This tool generates a hypothetical answer to find similar documents.
+    - **USE THIS FOR:** Vague questions where the user's query is very short or ambiguous.
+    - **EXAMPLE:** "Tell me about AI", "What about transformers?"
 
 3.  **hybrid**:
-    - Good for specific, technical, or keyword-heavy questions.
-    - Use this for finding exact terms, function names, or acronyms (e.g., "What is BM25?").
-    - This tool combines keyword search with vector search and re-ranks the results.
+    - **USE THIS FOR:** Very specific, keyword-heavy, or technical lookups.
+    - **KEYWORDS:** Acronyms, function names, specific numbers, error messages.
+    - **EXAMPLE:** "What is the `chunk_size` for `ParentDocumentRetriever`?", "What is SPLADE?", "What is ResNet-50?"
 
 4.  **base**:
-    - A general-purpose retriever.
-    - Use this as a default for any clear, straightforward question that doesn't fit the other categories.
-
+    - A general-purpose retriever. Use this as a default if the query is clear and simple but doesn't fit other categories.
 **User Query:**
 {query}
 
@@ -47,8 +41,7 @@ Example: {{"tool": "hybrid"}}
 
 router_prompt = PromptTemplate(
     template=router_prompt_template,
-    input_variables=[ "query"]# This only has one variable
+    input_variables=[ "query"]
 )
 
-# --- 3. Define the Router Chain ---
 router_chain = router_prompt | router_llm | JsonOutputParser()
