@@ -8,7 +8,9 @@ myvenv/
 
 # Local Vector Database
 vectorstore/
-
+docstore/
+*.pkl
+ingest_checkpoint.json
 # Secret Files
 .env
 
