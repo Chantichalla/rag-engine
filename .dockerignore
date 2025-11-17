@@ -1,18 +1,23 @@
-
+# Python / venv
 myvenv/
+venv/
+.env
+.env.*
 
-
+# Git
 .git/
 
-
+# Python bytecode
 __pycache__/
 *.py[cod]
 
+# RAG-generated data — DO NOT COPY INTO IMAGE
 vectorstore/
 docstore/
+bm25_retriever.pkl
+ingest_checkpoint.json
 
-
-.env
-
-
+# Editor & OS
+.vscode/
 .DS_Store
+*.log

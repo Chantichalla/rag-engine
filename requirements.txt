@@ -35,4 +35,3 @@ ragas                  # For Phase 6 evaluation
 python-dotenv          # To load API keys from .env
 langchainhub           # To easily pull standard prompts
 
-pytorch:2.4.0-cuda12.1-cudnn9-runtime

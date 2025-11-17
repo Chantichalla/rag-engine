@@ -1,21 +1,20 @@
-# Python
+
 __pycache__/
 *.py[cod]
 *.egg-info/
 
-# Virtual Environment (The new name!)
 myvenv/
 
-# Local Vector Database
+
 vectorstore/
 docstore/
 *.pkl
 ingest_checkpoint.json
-# Secret Files
+
 .env
 
-# OS
+
 .DS_Store
 
-# Ignore all our source documents
+
 data/
