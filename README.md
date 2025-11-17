@@ -35,6 +35,7 @@ This project implements:
 ---
 
 ## Project Structure
+```bash
 ultimate-rag-project/
 │
 ├── app/
@@ -53,11 +54,11 @@ ultimate-rag-project/
 │
 ├── requirements.txt
 └── README.md
-
+```
 
 ---
 
-## 📥 Ingest a Single PDF
+## Ingest a Single PDF
 
 Place your PDF inside the `data/` directory:
 
@@ -84,8 +85,9 @@ Generate embeddings
 Update the vectorstore/docstore
 
 Run the API :
+```bash
 python -m uvicorn app.main:app --reload --port 8000
-
+```
 
 Open Swagger UI:
 
@@ -99,7 +101,7 @@ POST /chat
   "query": "Summarize the document"
 }
 
-Tech Stack
+## Tech Stack
 
 Python 3.10+
 
@@ -115,7 +117,7 @@ Uvicorn
 
 Optional: CUDA + PyTorch for GPU acceleration
 
-What I Learned
+## What I Learned
 
 Retrieval engineering beyond basic vector search
 
@@ -127,7 +129,7 @@ Production-grade API lifecycle management
 
 Clean modular RAG architecture
 
-Future Enhancements
+## Future Enhancements
 
 Optional multimodal ingestion
 
