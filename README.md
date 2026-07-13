@@ -125,7 +125,7 @@ Hybrid RAG design and multi-step retrieval fusion
 
 Handling asynchronous & synchronous chain invocation
 
-Production-grade API lifecycle management
+API lifecycle management
 
 Clean modular RAG architecture
 
