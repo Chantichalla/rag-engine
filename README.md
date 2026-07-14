@@ -117,29 +117,3 @@ Uvicorn
 
 Optional: CUDA + PyTorch for GPU acceleration
 
-## What I Learned
-
-Retrieval engineering beyond basic vector search
-
-Hybrid RAG design and multi-step retrieval fusion
-
-Handling asynchronous & synchronous chain invocation
-
-API lifecycle management
-
-Clean modular RAG architecture
-
-## Future Enhancements
-
-Optional multimodal ingestion
-
-Webpage ingestion pipeline
-
-Streaming responses
-
-Ranking/ensemble experiments
-
-Contact
-
-If you're working on RAG systems, retrieval engineering, or production ML, feel free to reach out.
-I will be happy to help!
