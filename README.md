@@ -115,5 +115,5 @@ BM25 (rank-bm25)
 
 Uvicorn
 
-Optional: CUDA + PyTorch for GPU acceleration
+required : CUDA + PyTorch for GPU acceleration
 
